@@ -1,19 +1,14 @@
-import React, { useState, useEffect, useRef } from "react";
+import React, { useState, useEffect } from "react";
 import Fuse from "fuse.js";
 import "./styles.css";
 import { FaStar, FaRegStar, FaTimes, FaSearch } from "react-icons/fa";
+import VirtualScroll from "../VirtualScroll";
 
-const FilteredList: React.FC<{ items: string[] }> = ({
-    items,
-}: {
-    items: string[];
-}) => {
+const FilteredList: React.FC<{ items: string[] }> = ({ items }) => {
     const [displayedCoins, setDisplayedCoins] = useState<string[]>([]);
     const [favorites, setFavorites] = useState<string[]>([]);
     const [searchQuery, setSearchQuery] = useState("");
     const [activeTab, setActiveTab] = useState<"all" | "favorites">("all");
-    const [visibleCoins, setVisibleCoins] = useState<string[]>([]);
-    const listRef = useRef<HTMLDivElement>(null);
 
     const ITEM_HEIGHT = 40;
     const VISIBLE_ITEMS_COUNT = 9;
@@ -32,32 +27,6 @@ const FilteredList: React.FC<{ items: string[] }> = ({
         );
     }, [searchQuery, activeTab, items, favorites]);
 
-    useEffect(() => {
-        setVisibleCoins(displayedCoins.slice(0, VISIBLE_ITEMS_COUNT));
-    }, [displayedCoins]);
-
-    const handleScroll = () => {
-        if (listRef.current) {
-            const scrollTop = listRef.current.scrollTop;
-            const startIndex = Math.floor(scrollTop / ITEM_HEIGHT);
-            const endIndex = startIndex + VISIBLE_ITEMS_COUNT;
-            setVisibleCoins(displayedCoins.slice(startIndex, endIndex));
-        }
-    };
-
-    useEffect(() => {
-        const listElement = listRef.current;
-        if (listElement) {
-            listElement.addEventListener("scroll", handleScroll);
-        }
-
-        return () => {
-            if (listElement) {
-                listElement.removeEventListener("scroll", handleScroll);
-            }
-        };
-    }, [displayedCoins]);
-
     const toggleFavorite = (coin: string) => {
         setFavorites((prev) =>
             prev.includes(coin)
@@ -75,8 +44,22 @@ const FilteredList: React.FC<{ items: string[] }> = ({
     };
 
     const handleTabChange = (tab: "all" | "favorites") => {
-        setActiveTab(tab);
+        if (tab !== activeTab) {
+            setActiveTab(tab);
+        }
     };
+
+    const renderItem = (coin: string, index: number) => (
+        <div className="list-item" style={{ height: `${ITEM_HEIGHT}px` }}>
+            <button
+                className="icon-button"
+                onClick={() => toggleFavorite(coin)}
+            >
+                {favorites.includes(coin) ? <FaStar /> : <FaRegStar />}
+            </button>
+            <span>{coin}</span>
+        </div>
+    );
 
     return (
         <div className="filtered-list-container">
@@ -86,7 +69,7 @@ const FilteredList: React.FC<{ items: string[] }> = ({
                     type="text"
                     value={searchQuery}
                     onChange={handleSearchChange}
-                    placeholder="Search..."
+                    placeholder="Search…"
                 />
                 {searchQuery && (
                     <FaTimes className="clear-button" onClick={clearSearch} />
@@ -96,63 +79,31 @@ const FilteredList: React.FC<{ items: string[] }> = ({
             <div className="tabs">
                 <button
                     onClick={() => handleTabChange("favorites")}
-                    className={activeTab === "favorites" ? "active" : ""}
+                    className={`tab-button ${
+                        activeTab === "favorites" ? "active" : ""
+                    }`}
+                    disabled={activeTab === "favorites"}
                 >
                     <FaStar className="icon-left" />
                     Favorites
                 </button>
                 <button
                     onClick={() => handleTabChange("all")}
-                    className={activeTab === "all" ? "active" : ""}
+                    className={`tab-button ${
+                        activeTab === "all" ? "active" : ""
+                    }`}
+                    disabled={activeTab === "all"}
                 >
                     All Coins
                 </button>
             </div>
-            <div
-                className="list-container"
-                ref={listRef}
-                style={{
-                    height: `${ITEM_HEIGHT * VISIBLE_ITEMS_COUNT}px`,
-                    overflowY: "auto",
-                }}
-            >
-                <div
-                    style={{
-                        height: `${displayedCoins.length * ITEM_HEIGHT}px`,
-                        position: "relative",
-                    }}
-                >
-                    {visibleCoins.map((coin, index) => (
-                        <div
-                            key={coin}
-                            className="list-item"
-                            style={{
-                                position: "absolute",
-                                top: `${
-                                    (index +
-                                        Math.floor(
-                                            listRef.current?.scrollTop! /
-                                                ITEM_HEIGHT
-                                        )) *
-                                    ITEM_HEIGHT
-                                }px`,
-                                height: `${ITEM_HEIGHT}px`,
-                            }}
-                        >
-                            <button
-                                className="icon-button"
-                                onClick={() => toggleFavorite(coin)}
-                            >
-                                {favorites.includes(coin) ? (
-                                    <FaStar />
-                                ) : (
-                                    <FaRegStar />
-                                )}
-                            </button>
-                            <span>{coin}</span>
-                        </div>
-                    ))}
-                </div>
+            <div className="list-container">
+                <VirtualScroll
+                    items={displayedCoins}
+                    itemHeight={ITEM_HEIGHT}
+                    visibleItemCount={VISIBLE_ITEMS_COUNT}
+                    renderItem={renderItem}
+                />
             </div>
         </div>
     );
