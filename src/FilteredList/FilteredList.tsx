@@ -49,7 +49,7 @@ const FilteredList: React.FC<{ items: string[] }> = ({ items }) => {
         }
     };
 
-    const renderItem = (coin: string, index: number) => (
+    const renderItem = (coin: string) => (
         <div className="list-item" style={{ height: `${ITEM_HEIGHT}px` }}>
             <button
                 className="icon-button"
