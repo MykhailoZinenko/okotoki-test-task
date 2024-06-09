@@ -1,4 +1,10 @@
-import React, { useState, useRef, useEffect } from "react";
+import React, {
+    useState,
+    useRef,
+    useEffect,
+    useCallback,
+    useMemo,
+} from "react";
 import ReactDOM from "react-dom";
 import "./styles.css";
 import { FaSearch } from "react-icons/fa";
@@ -15,9 +21,11 @@ const DropdownButton: React.FC<DropdownButtonProps> = ({ children, label }) => {
     const buttonRef = useRef<HTMLButtonElement>(null);
     const portalRoot = useRef(document.createElement("div"));
 
-    const toggleDropdown = () => setIsOpen(!isOpen);
+    const toggleDropdown = useCallback(() => {
+        setIsOpen((prev) => !prev);
+    }, []);
 
-    const handleClickOutside = (event: MouseEvent) => {
+    const handleClickOutside = useCallback((event: MouseEvent) => {
         if (
             dropdownRef.current &&
             !dropdownRef.current.contains(event.target as Node) &&
@@ -26,15 +34,14 @@ const DropdownButton: React.FC<DropdownButtonProps> = ({ children, label }) => {
         ) {
             setIsOpen(false);
         }
-    };
+    }, []);
 
-    const updateDropdownPosition = () => {
-        console.log("here");
+    const updateDropdownPosition = useCallback(() => {
         if (isOpen && buttonRef.current) {
             const buttonRect = buttonRef.current.getBoundingClientRect();
             const dropdownHeight = dropdownRef.current?.offsetHeight || 0;
             const dropdownWidth = dropdownRef.current?.offsetWidth || 0;
-            const screenPadding = 10; // Optional padding to avoid touching screen edges
+            const screenPadding = 10;
 
             const top = Math.min(
                 buttonRect.bottom + window.scrollY + screenPadding,
@@ -53,31 +60,36 @@ const DropdownButton: React.FC<DropdownButtonProps> = ({ children, label }) => {
                 right: "auto",
             });
         }
-    };
+    }, [isOpen]);
 
     useEffect(() => {
         document.addEventListener("mousedown", handleClickOutside);
         document.body.appendChild(portalRoot.current);
         window.addEventListener("resize", updateDropdownPosition);
+
         return () => {
             document.removeEventListener("mousedown", handleClickOutside);
             document.body.removeChild(portalRoot.current);
             window.removeEventListener("resize", updateDropdownPosition);
         };
-    }, []);
+    }, [handleClickOutside, updateDropdownPosition]);
 
     useEffect(() => {
         updateDropdownPosition();
-    }, [isOpen]);
+    }, [isOpen, updateDropdownPosition]);
 
-    const dropdownContent = isOpen && (
-        <div
-            className="dropdown-content"
-            style={dropdownStyle}
-            ref={dropdownRef}
-        >
-            {children}
-        </div>
+    const dropdownContent = useMemo(
+        () =>
+            isOpen && (
+                <div
+                    className="dropdown-content"
+                    style={dropdownStyle}
+                    ref={dropdownRef}
+                >
+                    {children}
+                </div>
+            ),
+        [isOpen, dropdownStyle, children]
     );
 
     return (

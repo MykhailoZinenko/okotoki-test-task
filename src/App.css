@@ -1,4 +1,4 @@
-* { 
+* {
     margin: 0;
     padding: 0;
     box-sizing: border-box;
@@ -7,22 +7,18 @@
 }
 
 html {
-    scrollbar-color: transparent black;
-}
-
-html {
     --scrollbarBG: transparent;
     --thumbBG: black;
+    scrollbar-color: var(--thumbBG) var(--scrollbarBG);
+    scrollbar-width: thin;
 }
 
 body {
     padding-top: 50px;
-    background-color: white;
+    background-color: black;
     min-height: 100vh;
     display: flex;
     justify-content: center;
-    scrollbar-width: thin;
-    scrollbar-color: var(--thumbBG) var(--scrollbarBG)
 }
 
 body::-webkit-scrollbar {

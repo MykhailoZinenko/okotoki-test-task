@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useMemo, useCallback } from "react";
 import Fuse from "fuse.js";
 import "./styles.css";
 import { FaStar, FaRegStar, FaTimes, FaSearch } from "react-icons/fa";
@@ -13,7 +13,7 @@ const FilteredList: React.FC<{ items: string[] }> = ({ items }) => {
     const ITEM_HEIGHT = 40;
     const VISIBLE_ITEMS_COUNT = 9;
 
-    const fuse = new Fuse(items, { keys: [] });
+    const fuse = useMemo(() => new Fuse(items, { keys: [] }), [items]);
 
     useEffect(() => {
         const results = searchQuery
@@ -25,40 +25,48 @@ const FilteredList: React.FC<{ items: string[] }> = ({ items }) => {
                 ? results.filter((coin) => favorites.includes(coin))
                 : results
         );
-    }, [searchQuery, activeTab, items, favorites]);
+    }, [searchQuery, activeTab, items, favorites, fuse]);
 
-    const toggleFavorite = (coin: string) => {
+    const toggleFavorite = useCallback((coin: string) => {
         setFavorites((prev) =>
             prev.includes(coin)
                 ? prev.filter((fav) => fav !== coin)
                 : [...prev, coin]
         );
-    };
+    }, []);
 
-    const handleSearchChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-        setSearchQuery(e.target.value);
-    };
+    const handleSearchChange = useCallback(
+        (e: React.ChangeEvent<HTMLInputElement>) => {
+            setSearchQuery(e.target.value);
+        },
+        []
+    );
 
-    const clearSearch = () => {
+    const clearSearch = useCallback(() => {
         setSearchQuery("");
-    };
+    }, []);
 
-    const handleTabChange = (tab: "all" | "favorites") => {
-        if (tab !== activeTab) {
-            setActiveTab(tab);
-        }
-    };
+    const handleTabChange = useCallback((tab: "all" | "favorites") => {
+        setActiveTab(tab);
+    }, []);
 
-    const renderItem = (coin: string) => (
-        <div className="list-item" style={{ height: `${ITEM_HEIGHT}px` }}>
-            <button
-                className="icon-button"
-                onClick={() => toggleFavorite(coin)}
+    const renderItem = useCallback(
+        (coin: string) => (
+            <div
+                className="list-item"
+                style={{ height: `${ITEM_HEIGHT}px` }}
+                key={coin}
             >
-                {favorites.includes(coin) ? <FaStar /> : <FaRegStar />}
-            </button>
-            <span>{coin}</span>
-        </div>
+                <button
+                    className="icon-button"
+                    onClick={() => toggleFavorite(coin)}
+                >
+                    {favorites.includes(coin) ? <FaStar /> : <FaRegStar />}
+                </button>
+                <span>{coin}</span>
+            </div>
+        ),
+        [favorites, toggleFavorite]
     );
 
     return (
